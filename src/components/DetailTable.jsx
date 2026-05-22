@@ -1,14 +1,12 @@
-// src/components/DetailTable.jsx
 import { useState, useMemo } from "react";
 
 const PAGE_SIZE = 10;
 
 function formatDate(dt) {
   if (!dt) return <span className="text-slate-600">—</span>;
-  const d = new Date(dt);
   return (
     <span className="font-mono text-xs text-slate-400">
-      {d.toLocaleString("pt-BR")}
+      {new Date(dt).toLocaleString("pt-BR")}
     </span>
   );
 }
@@ -30,10 +28,8 @@ export default function DetailTable({ registros = [] }) {
     if (!search.trim()) return registros;
     const q = search.toLowerCase();
     return registros.filter((r) =>
-      [r.descricao, r.dataErro, r.tipo, r.versaoFL]
-        .join(" ")
-        .toLowerCase()
-        .includes(q)
+      [r.nomeFantasia, r.descricao, r.dataErro, r.tipo, r.versaoFL]
+        .join(" ").toLowerCase().includes(q)
     );
   }, [registros, search]);
 
@@ -62,7 +58,7 @@ export default function DetailTable({ registros = [] }) {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-surface-border bg-surface">
-              {["Início", "Fim", "Data Start", "Data Erro", "Descrição", "Tipo", "Versão"].map((h) => (
+              {["Loja", "Início", "Fim", "Data Erro", "Tipo", "Versão"].map((h) => (
                 <th key={h} className="px-4 py-3 text-left text-[11px] uppercase tracking-wider text-slate-500 font-medium whitespace-nowrap">
                   {h}
                 </th>
@@ -72,19 +68,22 @@ export default function DetailTable({ registros = [] }) {
           <tbody>
             {paged.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-slate-600 text-sm">
+                <td colSpan={6} className="px-4 py-8 text-center text-slate-600 text-sm">
                   Nenhum registro encontrado.
                 </td>
               </tr>
             ) : (
               paged.map((r, i) => (
                 <tr key={i} className="border-b border-surface-border/50 hover:bg-surface-muted/30 transition-colors">
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <span className="text-xs font-medium text-brand-400 bg-brand-400/10 border border-brand-400/20 rounded-full px-2 py-0.5">
+                      {r.nomeFantasia || "—"}
+                    </span>
+                  </td>
                   <td className="px-4 py-3 whitespace-nowrap">{formatDate(r.dataInicio)}</td>
                   <td className="px-4 py-3 whitespace-nowrap">{formatDate(r.dataFim)}</td>
-                  <td className="px-4 py-3 whitespace-nowrap">{formatDate(r.dataStart)}</td>
                   <td className="px-4 py-3 whitespace-nowrap">{formatDate(r.dataErro)}</td>
-                  <td className="px-4 py-3 max-w-xs"><MsgCell text={r.descricao} /></td>
-                  <td className="px-4 py-3 whitespace-nowrap font-mono text-xs text-slate-400">{r.tipo || "—"}</td>
+                  <td className="px-4 py-3 max-w-xs"><MsgCell text={r.tipo} /></td>
                   <td className="px-4 py-3 whitespace-nowrap font-mono text-xs text-slate-500">{r.versaoFL || "—"}</td>
                 </tr>
               ))
@@ -97,18 +96,12 @@ export default function DetailTable({ registros = [] }) {
         <div className="flex items-center justify-between text-xs text-slate-500">
           <span>Página {page} de {totalPages}</span>
           <div className="flex gap-2">
-            <button
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page === 1}
-              className="px-3 py-1.5 rounded-lg border border-surface-border hover:border-brand-600/40 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-            >
+            <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}
+              className="px-3 py-1.5 rounded-lg border border-surface-border hover:border-brand-600/40 disabled:opacity-30 disabled:cursor-not-allowed transition-all">
               ← Anterior
             </button>
-            <button
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={page === totalPages}
-              className="px-3 py-1.5 rounded-lg border border-surface-border hover:border-brand-600/40 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-            >
+            <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages}
+              className="px-3 py-1.5 rounded-lg border border-surface-border hover:border-brand-600/40 disabled:opacity-30 disabled:cursor-not-allowed transition-all">
               Próxima →
             </button>
           </div>

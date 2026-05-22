@@ -1,4 +1,3 @@
-// src/components/StoreCard.jsx
 import StatusBadge from "./StatusBadge";
 
 const STATUS_GLOW = {
@@ -24,8 +23,7 @@ const STATUS_ICON_COLOR = {
 
 function formatDate(dt) {
   if (!dt) return "—";
-  const d = new Date(dt);
-  return d.toLocaleString("pt-BR", {
+  return new Date(dt).toLocaleString("pt-BR", {
     day: "2-digit", month: "2-digit", year: "numeric",
     hour: "2-digit", minute: "2-digit",
   });
@@ -35,67 +33,60 @@ export default function StoreCard({ loja, onDetails }) {
   const glow   = STATUS_GLOW[loja.status]   || STATUS_GLOW.desconhecido;
   const icon   = STATUS_ICON[loja.status]   || "?";
   const iconCl = STATUS_ICON_COLOR[loja.status] || STATUS_ICON_COLOR.desconhecido;
+  const lojas  = loja.lojas || [loja.nome_fantasia];
 
   return (
-    <div
-      className={`card p-5 flex flex-col gap-4 transition-all duration-300 hover:shadow-xl ${glow} cursor-default animate-slide-up group`}
-    >
+    <div className={`card p-5 flex flex-col gap-4 transition-all duration-300 hover:shadow-xl ${glow} animate-slide-up`}>
+
       {/* Header */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
-          <div className={`flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center text-lg font-bold ${iconCl} ${loja.status === "sincronizando" ? "animate-spin-slow" : ""}`}>
+          <div className={`flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center text-lg font-bold ${iconCl}`}>
             {icon}
           </div>
           <div className="min-w-0">
             <p className="font-display font-semibold text-white truncate leading-tight">
-              {loja.nome_fantasia || loja.empresa || `Loja ${loja.grupo_loja}`}
+              {loja.grupo_loja}
             </p>
-            <p className="text-xs text-slate-500 truncate mt-0.5">
-              Grupo #{loja.grupo_loja}
+            <p className="text-xs text-slate-500 mt-0.5">
+              {lojas.length} {lojas.length === 1 ? "loja" : "lojas"}
             </p>
           </div>
         </div>
         <StatusBadge status={loja.status} />
       </div>
 
-      {/* Empresa */}
-      {loja.empresa && loja.empresa !== loja.nome_fantasia && (
-        <p className="text-xs text-slate-400 -mt-1 truncate border-l-2 border-surface-muted pl-2">
-          {loja.empresa}
-        </p>
-      )}
-
-      {/* Última mensagem */}
-      <div className="bg-surface rounded-xl p-3 border border-surface-border">
-        <p className="text-[11px] text-slate-500 uppercase tracking-wider mb-1 font-medium">
-          Último evento
-        </p>
-        <p className="text-sm text-slate-300 font-mono leading-snug line-clamp-2">
-          {loja.mensagem || "—"}
-        </p>
+      {/* Lista de lojas do grupo */}
+      <div className="bg-surface rounded-xl border border-surface-border p-3 flex flex-col gap-1 max-h-28 overflow-y-auto">
+        <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-1 font-medium">Lojas do grupo</p>
+        {lojas.map((nome, i) => (
+          <div key={i} className="flex items-center gap-2">
+            <span className="w-1 h-1 rounded-full bg-slate-600 flex-shrink-0" />
+            <span className="text-xs text-slate-300 truncate">{nome}</span>
+          </div>
+        ))}
       </div>
 
-      {/* Erro (se houver) */}
+      {/* Último evento */}
+      <div className="bg-surface rounded-xl p-3 border border-surface-border">
+        <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-1 font-medium">Último evento</p>
+        <p className="text-sm text-slate-300 font-mono leading-snug">{loja.mensagem || "—"}</p>
+      </div>
+
+      {/* Erro */}
       {loja.erro && (
         <div className="bg-red-500/5 border border-red-500/20 rounded-xl p-3">
-          <p className="text-[11px] text-red-400 uppercase tracking-wider mb-1 font-medium">
-            Erro detectado
-          </p>
-          <p className="text-xs text-red-300 font-mono line-clamp-2">{loja.erro}</p>
+          <p className="text-[10px] text-red-400 uppercase tracking-wider mb-1 font-medium">Erro detectado</p>
+          <p className="text-xs text-red-300 font-mono">{loja.erro}</p>
         </div>
       )}
 
       {/* Footer */}
       <div className="flex items-center justify-between mt-auto pt-1">
         <div>
-          <p className="text-[10px] text-slate-600 uppercase tracking-wider">
-            Última atualização
-          </p>
-          <p className="text-xs text-slate-400 font-mono">
-            {formatDate(loja.ultima_atualizacao)}
-          </p>
+          <p className="text-[10px] text-slate-600 uppercase tracking-wider">Última atualização</p>
+          <p className="text-xs text-slate-400 font-mono">{formatDate(loja.ultima_atualizacao)}</p>
         </div>
-
         <button
           onClick={() => onDetails(loja)}
           className="px-3 py-1.5 text-xs font-medium rounded-lg bg-brand-600/20 text-brand-400 border border-brand-600/30 hover:bg-brand-600/40 hover:text-brand-300 transition-all duration-200"

@@ -1,4 +1,3 @@
-// src/pages/Dashboard.jsx
 import { useState, useCallback } from "react";
 import { fetchStatus } from "../services/api";
 import { useAutoRefresh } from "../hooks/useAutoRefresh";
@@ -17,23 +16,51 @@ const FILTER_OPTIONS = [
 
 export default function Dashboard({ onSelectLoja }) {
   const [filter, setFilter] = useState("todos");
+  const [search, setSearch] = useState("");
 
   const fetcher = useCallback(fetchStatus, []);
   const { data, loading, error, lastUpdated, countdown, refresh } =
     useAutoRefresh(fetcher, 30_000);
 
   const lojas = data?.lojas ?? [];
-  const filtered =
-    filter === "todos" ? lojas : lojas.filter((l) => l.status === filter);
+
+  const filtered = lojas.filter((l) => {
+    const matchFilter = filter === "todos" || l.status === filter;
+    const q = search.toLowerCase();
+    const matchSearch = !q || 
+      l.grupo_loja?.toLowerCase().includes(q) ||
+      l.nome_fantasia?.toLowerCase().includes(q) ||
+      (l.lojas || []).some(nome => nome.toLowerCase().includes(q));
+    return matchFilter && matchSearch;
+  });
 
   return (
     <div className="flex flex-col gap-6 animate-fade-in">
-      {/* Stats */}
+
       <StatsBar lojas={lojas} />
 
-      {/* Toolbar */}
+      {/* Barra de pesquisa */}
+      <div className="relative">
+        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500">🔍</span>
+        <input
+          type="text"
+          placeholder="Pesquisar por grupo ou nome da loja..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full bg-surface-card border border-surface-border rounded-xl pl-11 pr-4 py-3 text-sm text-slate-300 placeholder-slate-600 focus:outline-none focus:border-brand-500/50 transition-colors"
+        />
+        {search && (
+          <button
+            onClick={() => setSearch("")}
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 text-lg leading-none"
+          >
+            ×
+          </button>
+        )}
+      </div>
+
+      {/* Filtros + Refresh */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
-        {/* Filtros */}
         <div className="flex gap-2 flex-wrap">
           {FILTER_OPTIONS.map((opt) => (
             <button
@@ -42,7 +69,7 @@ export default function Dashboard({ onSelectLoja }) {
               className={`px-3 py-1.5 text-xs rounded-lg border transition-all duration-200 ${
                 filter === opt.key
                   ? "bg-brand-600/30 border-brand-500/50 text-brand-300"
-                  : "border-surface-border text-slate-500 hover:border-surface-muted hover:text-slate-400"
+                  : "border-surface-border text-slate-500 hover:text-slate-400"
               }`}
             >
               {opt.label}
@@ -54,39 +81,34 @@ export default function Dashboard({ onSelectLoja }) {
             </button>
           ))}
         </div>
-
-        {/* Refresh bar */}
-        <RefreshBar
-          countdown={countdown}
-          lastUpdated={lastUpdated}
-          onRefresh={refresh}
-          loading={loading && !!data}
-        />
+        <RefreshBar countdown={countdown} lastUpdated={lastUpdated} onRefresh={refresh} loading={loading && !!data} />
       </div>
 
-      {/* Content */}
+      {/* Resultado da pesquisa */}
+      {search && (
+        <p className="text-xs text-slate-500">
+          {filtered.length} resultado{filtered.length !== 1 ? "s" : ""} para "{search}"
+        </p>
+      )}
+
+      {/* Cards */}
       {error && !data ? (
         <ErrorMessage message={error} onRetry={refresh} />
       ) : loading && !data ? (
         <LoadingGrid count={6} />
       ) : filtered.length === 0 ? (
         <div className="card p-12 text-center text-slate-600">
-          <p className="text-4xl mb-3">🏪</p>
-          <p>Nenhuma loja encontrada para o filtro selecionado.</p>
+          <p className="text-4xl mb-3">🔍</p>
+          <p>{search ? `Nenhuma loja encontrada para "${search}"` : "Nenhuma loja encontrada."}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((loja) => (
-            <StoreCard
-              key={loja.grupo_loja}
-              loja={loja}
-              onDetails={onSelectLoja}
-            />
+            <StoreCard key={loja.grupo_loja} loja={loja} onDetails={onSelectLoja} />
           ))}
         </div>
       )}
 
-      {/* Error banner when refreshing fails */}
       {error && data && (
         <div className="card border-red-500/20 px-4 py-3 text-sm text-red-400 text-center">
           ⚠️ Falha ao atualizar: {error}
