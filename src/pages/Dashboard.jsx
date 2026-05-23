@@ -27,10 +27,12 @@ export default function Dashboard({ onSelectLoja }) {
   const filtered = lojas.filter((l) => {
     const matchFilter = filter === "todos" || l.status === filter;
     const q = search.toLowerCase();
-    const matchSearch = !q || 
+    const matchSearch = !q ||
       l.grupo_loja?.toLowerCase().includes(q) ||
       l.nome_fantasia?.toLowerCase().includes(q) ||
-      (l.lojas || []).some(nome => nome.toLowerCase().includes(q));
+      (l.lojas || []).some(loja =>
+        (typeof loja === "string" ? loja : loja.nome || "").toLowerCase().includes(q)
+      );
     return matchFilter && matchSearch;
   });
 
