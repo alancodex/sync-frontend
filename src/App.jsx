@@ -18,10 +18,10 @@ export default function App() {
             className="flex items-center gap-2.5 group"
           >
             <div className="w-7 h-7 rounded-lg bg-brand-600 flex items-center justify-center text-white text-xs font-bold">
-              S
+              C
             </div>
             <span className="font-display font-bold text-white text-sm">
-              SyncMonitor
+              Monitor CDS
             </span>
           </button>
 
@@ -56,7 +56,6 @@ export default function App() {
 
       {/* Main */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-        {/* Page title */}
         <div className="mb-6">
           {selectedLoja ? null : (
             <>
