@@ -21,34 +21,65 @@ function MsgCell({ text, isError }) {
 }
 
 export default function DetailTable({ registros = [] }) {
-  const [search, setSearch] = useState("");
-  const [page,   setPage]   = useState(1);
+  const [search,       setSearch]       = useState("");
+  const [filterLoja,   setFilterLoja]   = useState("");
+  const [page,         setPage]         = useState(1);
+
+  // Lista de lojas únicas para o seletor
+  const lojasUnicas = useMemo(() => {
+    const nomes = [...new Set(registros.map(r => r.nomeFantasia).filter(Boolean))];
+    return nomes.sort();
+  }, [registros]);
 
   const filtered = useMemo(() => {
-    if (!search.trim()) return registros;
-    const q = search.toLowerCase();
-    return registros.filter((r) =>
-      [r.nomeFantasia, r.descricao, r.dataErro, r.tipo, r.versaoFL]
-        .join(" ").toLowerCase().includes(q)
-    );
-  }, [registros, search]);
+    return registros.filter((r) => {
+      // Filtro por nomeFantasia (dropdown)
+      const matchLoja = !filterLoja || r.nomeFantasia === filterLoja;
+
+      // Filtro textual geral
+      const q = search.toLowerCase();
+      const matchSearch = !q ||
+        [r.nomeFantasia, r.descricao, r.dataErro, r.tipo, r.versaoFL]
+          .join(" ").toLowerCase().includes(q);
+
+      return matchLoja && matchSearch;
+    });
+  }, [registros, search, filterLoja]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
+  const handleSearch = (val) => { setSearch(val); setPage(1); };
+  const handleLoja   = (val) => { setFilterLoja(val); setPage(1); };
+
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 flex-wrap">
+
+        {/* Filtro por nomeFantasia */}
+        <select
+          value={filterLoja}
+          onChange={(e) => handleLoja(e.target.value)}
+          className="bg-surface border border-surface-border rounded-xl px-3 py-2 text-sm text-slate-300 focus:outline-none focus:border-brand-500/50 transition-colors"
+        >
+          <option value="">Todas as lojas</option>
+          {lojasUnicas.map((nome) => (
+            <option key={nome} value={nome}>{nome}</option>
+          ))}
+        </select>
+
+        {/* Filtro textual geral */}
         <div className="relative flex-1 max-w-sm">
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm">🔍</span>
           <input
             type="text"
-            placeholder="Filtrar registros..."
+            placeholder="Filtrar por tipo, versão..."
             value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+            onChange={(e) => handleSearch(e.target.value)}
             className="w-full bg-surface border border-surface-border rounded-xl pl-9 pr-4 py-2 text-sm text-slate-300 placeholder-slate-600 focus:outline-none focus:border-brand-500/50 transition-colors"
           />
         </div>
+
         <span className="text-xs text-slate-500">
           {filtered.length} registro{filtered.length !== 1 ? "s" : ""}
         </span>

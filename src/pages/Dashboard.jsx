@@ -11,7 +11,7 @@ const FILTER_OPTIONS = [
   { key: "todos",         label: "Todas" },
   { key: "ok",            label: "Online" },
   { key: "erro",          label: "Com Erro" },
-  { key: "sincronizando", label: "Sincronizando" },
+  { key: "sincronizando", label: "Sincronizando / Inativo" },
 ];
 
 export default function Dashboard({ onSelectLoja }) {
@@ -25,7 +25,12 @@ export default function Dashboard({ onSelectLoja }) {
   const lojas = data?.lojas ?? [];
 
   const filtered = lojas.filter((l) => {
-    const matchFilter = filter === "todos" || l.status === filter;
+    // Filtro de status — "sincronizando" inclui "inativo"
+    const matchFilter =
+      filter === "todos" ||
+      l.status === filter ||
+      (filter === "sincronizando" && l.status === "inativo");
+
     const q = search.toLowerCase();
     const matchSearch = !q ||
       l.grupo_loja?.toLowerCase().includes(q) ||
@@ -33,6 +38,7 @@ export default function Dashboard({ onSelectLoja }) {
       (l.lojas || []).some(loja =>
         (typeof loja === "string" ? loja : loja.nome || "").toLowerCase().includes(q)
       );
+
     return matchFilter && matchSearch;
   });
 
@@ -75,7 +81,12 @@ export default function Dashboard({ onSelectLoja }) {
               }`}
             >
               {opt.label}
-              {opt.key !== "todos" && (
+              {opt.key === "sincronizando" && (
+                <span className="ml-1.5 opacity-60">
+                  ({lojas.filter((l) => l.status === "sincronizando" || l.status === "inativo").length})
+                </span>
+              )}
+              {opt.key !== "todos" && opt.key !== "sincronizando" && (
                 <span className="ml-1.5 opacity-60">
                   ({lojas.filter((l) => l.status === opt.key).length})
                 </span>
