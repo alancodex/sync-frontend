@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 
 const PAGE_SIZE = 10;
+const PREVIEW_PER_LOJA = 3;
 
 function formatDate(dt) {
   if (!dt) return <span className="text-slate-600">—</span>;
@@ -21,28 +22,39 @@ function MsgCell({ text, isError }) {
 }
 
 export default function DetailTable({ registros = [] }) {
-  const [search,       setSearch]       = useState("");
-  const [filterLoja,   setFilterLoja]   = useState("");
-  const [page,         setPage]         = useState(1);
+  const [search,     setSearch]     = useState("");
+  const [filterLoja, setFilterLoja] = useState("");
+  const [page,       setPage]       = useState(1);
 
-  // Lista de lojas únicas para o seletor
   const lojasUnicas = useMemo(() => {
     const nomes = [...new Set(registros.map(r => r.nomeFantasia).filter(Boolean))];
     return nomes.sort();
   }, [registros]);
 
   const filtered = useMemo(() => {
-    return registros.filter((r) => {
-      // Filtro por nomeFantasia (dropdown)
-      const matchLoja = !filterLoja || r.nomeFantasia === filterLoja;
+    const q = search.toLowerCase();
 
-      // Filtro textual geral
-      const q = search.toLowerCase();
+    // Se selecionou uma loja específica → mostra todos os registros dela
+    if (filterLoja) {
+      return registros.filter((r) => {
+        const matchLoja = r.nomeFantasia === filterLoja;
+        const matchSearch = !q ||
+          [r.nomeFantasia, r.descricao, r.dataErro, r.tipo, r.versaoFL]
+            .join(" ").toLowerCase().includes(q);
+        return matchLoja && matchSearch;
+      });
+    }
+
+    // Sem filtro de loja → mostra PREVIEW_PER_LOJA registros por loja
+    const contadorPorLoja: Record<string, number> = {};
+    return registros.filter((r) => {
+      const nome = r.nomeFantasia || "";
+      contadorPorLoja[nome] = (contadorPorLoja[nome] || 0) + 1;
+      const matchPreview = contadorPorLoja[nome] <= PREVIEW_PER_LOJA;
       const matchSearch = !q ||
         [r.nomeFantasia, r.descricao, r.dataErro, r.tipo, r.versaoFL]
           .join(" ").toLowerCase().includes(q);
-
-      return matchLoja && matchSearch;
+      return matchPreview && matchSearch;
     });
   }, [registros, search, filterLoja]);
 
@@ -68,7 +80,7 @@ export default function DetailTable({ registros = [] }) {
           ))}
         </select>
 
-        {/* Filtro textual geral */}
+        {/* Filtro textual */}
         <div className="relative flex-1 max-w-sm">
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm">🔍</span>
           <input
@@ -82,6 +94,11 @@ export default function DetailTable({ registros = [] }) {
 
         <span className="text-xs text-slate-500">
           {filtered.length} registro{filtered.length !== 1 ? "s" : ""}
+          {!filterLoja && lojasUnicas.length > 1 && (
+            <span className="ml-1 opacity-60">
+              (prévia — selecione uma loja para ver todos)
+            </span>
+          )}
         </span>
       </div>
 
@@ -105,7 +122,11 @@ export default function DetailTable({ registros = [] }) {
               </tr>
             ) : (
               paged.map((r, i) => (
-                <tr key={i} className="border-b border-surface-border/50 hover:bg-surface-muted/30 transition-colors">
+                <tr
+                  key={i}
+                  className="border-b border-surface-border/50 hover:bg-surface-muted/30 transition-colors cursor-pointer"
+                  onClick={() => !filterLoja && handleLoja(r.nomeFantasia)}
+                >
                   <td className="px-4 py-3 whitespace-nowrap">
                     <span className="text-xs font-medium text-brand-400 bg-brand-400/10 border border-brand-400/20 rounded-full px-2 py-0.5">
                       {r.nomeFantasia || "—"}
@@ -122,6 +143,16 @@ export default function DetailTable({ registros = [] }) {
           </tbody>
         </table>
       </div>
+
+      {/* Botão limpar filtro de loja */}
+      {filterLoja && (
+        <button
+          onClick={() => handleLoja("")}
+          className="self-start text-xs text-slate-500 hover:text-slate-300 border border-surface-border rounded-lg px-3 py-1.5 transition-all"
+        >
+          ← Voltar para todas as lojas
+        </button>
+      )}
 
       {totalPages > 1 && (
         <div className="flex items-center justify-between text-xs text-slate-500">
